@@ -1,5 +1,6 @@
 package com.library.management.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -18,6 +19,7 @@ public class DonationRequestUpdateRequest {
     @NotBlank(message = "Book title is required")
     @Size(max = 255, message = "Book title must not exceed 255 characters")
     @Schema(description = "Title of the book being donated", example = "The Great Gatsby")
+    @JsonProperty("bookTitle")
     private String bookTitle;
     
     @NotBlank(message = "Author is required")

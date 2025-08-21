@@ -43,7 +43,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponse>> getAllUsers(
             @Parameter(description = "User role filter") @RequestParam(required = false) String role,
             @Parameter(description = "Active users only") @RequestParam(required = false) Boolean active,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<UserResponse> response = userService.getAllUsers(role, active, pageable);
         return ResponseEntity.ok(response);
     }
@@ -55,7 +55,7 @@ public class UserController {
     })
     public ResponseEntity<Page<UserResponse>> searchUsers(
             @Parameter(description = "Search query (name or email)") @RequestParam String query,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<UserResponse> response = userService.searchUsers(query, pageable);
         return ResponseEntity.ok(response);
     }

@@ -1,5 +1,6 @@
 package com.library.management.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.library.management.entity.Book;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -31,6 +32,7 @@ public class BookCreateRequest {
     
     @NotNull(message = "Category ID is required")
     @Schema(description = "ID of the category this book belongs to", example = "1")
+    @JsonProperty("categoryId")
     private Long categoryId;
     
     @NotNull(message = "Book format is required")
@@ -40,6 +42,7 @@ public class BookCreateRequest {
     @NotNull(message = "Total copies is required")
     @Min(value = 1, message = "Total copies must be at least 1")
     @Schema(description = "Total number of copies", example = "5")
+    @JsonProperty("totalCopies")
     private Integer totalCopies;
     
     @Schema(description = "Number of available copies (defaults to total copies if not provided)", example = "5")
@@ -54,15 +57,14 @@ public class BookCreateRequest {
     @Schema(description = "Publication year of the book", example = "1925")
     private Integer publicationYear;
 
-//    private String book_cover;
-//    private String book_coverUrl;
-//
-//    private String pdf_file;
-//    private String pdf_fileUrl;
-//
-//    private String audio_file;
-//    private String audio_fileUrl;
-    // No files here — files come via MultipartFile in controller
+    @Schema(description = "URL for book cover image", example = "https://example.com/covers/great-gatsby.jpg")
+    private String bookCoverUrl;
+
+    @Schema(description = "URL for PDF version of the book", example = "https://example.com/pdfs/great-gatsby.pdf")
+    private String pdfFileUrl;
+
+    @Schema(description = "URL for audio version of the book", example = "https://example.com/audio/great-gatsby.mp3")
+    private String audioFileUrl;
 
 }
 

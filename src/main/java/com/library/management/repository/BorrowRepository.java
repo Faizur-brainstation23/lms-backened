@@ -14,6 +14,8 @@ import java.util.Optional;
 
 @Repository
 public interface BorrowRepository extends JpaRepository<Borrow, Long> {
+
+    long countByStatus(Borrow.BorrowStatus status);
     
     List<Borrow> findByUserId(Long userId);
     

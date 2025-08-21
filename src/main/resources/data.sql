@@ -9,9 +9,9 @@ INSERT INTO categories (name, description, created_at, updated_at) VALUES
 
 -- Insert sample users
 INSERT INTO users (username, name, email, password_hash, role, date_of_birth, address, is_active, created_at, updated_at) VALUES
-('john_doe', 'John Doe', 'john.doe@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'MEMBER', '1990-05-15', '123 Main St, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('jane_smith', 'Jane Smith', 'jane.smith@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'MEMBER', '1985-08-22', '456 Oak Ave, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('bob_johnson', 'Bob Johnson', 'bob.johnson@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'MEMBER', '1992-03-10', '789 Pine Rd, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('john_doe', 'John Doe', 'john.doe@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'USER', '1990-05-15', '123 Main St, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('jane_smith', 'Jane Smith', 'jane.smith@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'USER', '1985-08-22', '456 Oak Ave, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('bob_johnson', 'Bob Johnson', 'bob.johnson@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'USER', '1992-03-10', '789 Pine Rd, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('admin', 'Charlie Wilson', 'charlie.wilson@email.com', '$2b$12$xVgqwB0C3bFkJIaoYpaQWOO8A3tmHSx8U5OIRcJFEx8JHqAiLH3C.', 'ADMIN', '1980-11-15', '654 Maple Dr, City, State', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample books

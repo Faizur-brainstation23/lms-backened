@@ -58,7 +58,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
     })
     public ResponseEntity<Page<CategoryResponse>> getAllCategories(
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<CategoryResponse> response = categoryService.getAllCategories(pageable);
         return ResponseEntity.ok(response);
     }

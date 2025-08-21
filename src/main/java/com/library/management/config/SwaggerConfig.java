@@ -21,18 +21,6 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Library Management System API")
-                        .description("A comprehensive REST API for managing library operations including books, categories, users, and borrowing transactions with JWT Authentication.\n\n" +
-                                "**How to use JWT Authentication:**\n" +
-                                "1. First, register a new user using the `/api/auth/register` endpoint\n" +
-                                "2. Then, login using the `/api/auth/login` endpoint to get your JWT token\n" +
-                                "3. Copy the token from the response\n" +
-                                "4. Click the 'Authorize' button above and paste the token (without 'Bearer ' prefix)\n" +
-                                "5. Now you can test all protected endpoints!\n\n" +
-                                "**Test Credentials:**\n" +
-                                "You can create your own account or use these sample credentials after registering:\n" +
-                                "- Username: testuser\n" +
-                                "- Password: password123")
-                        .version("2.0")
                         .contact(new Contact()
                                 .name("Library Management Team")
                                 .email("support@librarymanagement.com")

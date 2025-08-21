@@ -16,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/borrow")
@@ -25,6 +27,24 @@ import java.util.List;
 public class BorrowController {
 
     private final BorrowService borrowService;
+
+    @GetMapping("/stats")
+    @Tag(name = "Borrow Statistics", description = "APIs for getting statistics of borrowed books")
+    @Operation(summary = "Get borrow statistics",
+            description = "Returns total counts of borrowed, returned, and overdue books")
+    @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
+    public ResponseEntity<Map<String, Long>> getBorrowStats() {
+        long borrowedCount = borrowService.countActiveBorrows();
+        long returnedCount = borrowService.countReturnedBorrows();
+        long overdueCount  = borrowService.countOverdueBorrows();
+
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("borrowedBooks", borrowedCount);
+        stats.put("returnedBooks", returnedCount);
+        stats.put("overdueBooks", overdueCount);
+
+        return ResponseEntity.ok(stats);
+    }
 
     @PostMapping("/create")
     @Operation(summary = "Borrow a book", description = "Creates a new book borrow record")
@@ -62,7 +82,7 @@ public class BorrowController {
             @Parameter(description = "Book ID filter") @RequestParam(required = false) Long bookId,
             @Parameter(description = "Active borrows only") @RequestParam(required = false) Boolean active,
             @Parameter(description = "Overdue borrows only") @RequestParam(required = false) Boolean overdue,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<BorrowResponse> response = borrowService.getAllBorrows(userId, bookId, active, overdue, pageable);
         return ResponseEntity.ok(response);
     }
@@ -76,7 +96,7 @@ public class BorrowController {
     public ResponseEntity<Page<BorrowResponse>> getUserBorrows(
             @Parameter(description = "User ID") @PathVariable Long userId,
             @Parameter(description = "Active borrows only") @RequestParam(required = false) Boolean active,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<BorrowResponse> response = borrowService.getUserBorrows(userId, active, pageable);
         return ResponseEntity.ok(response);
     }
@@ -87,7 +107,7 @@ public class BorrowController {
             @ApiResponse(responseCode = "200", description = "Active borrows retrieved successfully")
     })
     public ResponseEntity<Page<BorrowResponse>> getActiveBorrows(
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<BorrowResponse> response = borrowService.getActiveBorrows(pageable);
         return ResponseEntity.ok(response);
     }
@@ -136,7 +156,7 @@ public class BorrowController {
     })
     public ResponseEntity<Page<BorrowResponse>> getUserBorrowingHistory(
             @Parameter(description = "User ID") @PathVariable Long userId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @Parameter(hidden = true) Pageable pageable) {
         Page<BorrowResponse> response = borrowService.getUserBorrowingHistory(userId, pageable);
         return ResponseEntity.ok(response);
     }

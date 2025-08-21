@@ -16,14 +16,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
-import com.library.management.util.FileValidationUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -35,139 +30,45 @@ public class BookService {
     private final NotificationService notificationService;
     private final RecommendationService recommendationService;
 
-    private final Path rootUploadDir = Paths.get("uploads");
-
-    private String cleanUrlFilename(String url) {
-        if (url == null) return null;
-
-        int lastSlash = url.lastIndexOf('/');
-        if (lastSlash == -1 || lastSlash == url.length() - 1) {
-            return url; // malformed URL or no filename
-        }
-
-        String path = url.substring(0, lastSlash + 1); // e.g. "/files/covers/"
-        String filename = url.substring(lastSlash + 1); // e.g. "1754998492625_GGatsby.jpg"
-
-        int underscoreIndex = filename.indexOf('_');
-        if (underscoreIndex == -1) {
-            return url; // no prefix to remove
-        }
-
-        String cleanedFilename = filename.substring(underscoreIndex + 1); // "GGatsby.jpg"
-        return path + cleanedFilename;
-    }
-
-
-    //create book with file
     @Transactional
-    public BookResponse createBookWithFiles(BookCreateRequest request, MultipartFile bookCover,
-                                            MultipartFile pdfFile, MultipartFile audioFile) {
-
+    public BookResponse createBook(BookCreateRequest request) {
         if (request.getIsbn() != null && bookRepository.findByIsbn(request.getIsbn()).isPresent()) {
             throw new ResourceAlreadyExistsException("Book", "ISBN", request.getIsbn());
         }
 
-        // Validate files
-        if (bookCover != null && !bookCover.isEmpty() && !FileValidationUtil.isValidImageFile(bookCover)) {
-            throw new BusinessLogicException("Invalid image file. Only JPG and PNG files under 10MB are allowed.");
-        }
-        
-        if (pdfFile != null && !pdfFile.isEmpty() && !FileValidationUtil.isValidPdfFile(pdfFile)) {
-            throw new BusinessLogicException("Invalid PDF file. Only PDF files under 10MB are allowed.");
-        }
-
         Category category = categoryService.getCategoryEntityById(request.getCategoryId());
-
-        // Save files and get URLs
-        String bookCoverUrl = null;
-        String pdfFileUrl = null;
-        String audioFileUrl = null;
-
-        if (bookCover != null && !bookCover.isEmpty()) {
-            bookCoverUrl = saveFile(bookCover, "covers");
-        }
-        if (pdfFile != null && !pdfFile.isEmpty()) {
-            pdfFileUrl = saveFile(pdfFile, "pdfs");
-        }
-        if (audioFile != null && !audioFile.isEmpty()) {
-            audioFileUrl = saveFile(audioFile, "audio");
-        }
 
         // Convert DTO to entity
         Book book = bookMapper.toEntity(request, category);
 
-        // Set file URLs directly on entity
-        book.setBookCoverUrl(bookCoverUrl);
-        book.setPdfFileUrl(pdfFileUrl);
-        book.setAudioFileUrl(audioFileUrl);
+        // Set URL fields from request
+        book.setBookCoverUrl(request.getBookCoverUrl());
+        book.setPdfFileUrl(request.getPdfFileUrl());
+        book.setAudioFileUrl(request.getAudioFileUrl());
 
         // Validate rules and save
         validateBookBusinessRules(book);
 
         Book savedBook = bookRepository.save(book);
         
-        // Clean URLs before returning response
-        String cleanBookCoverUrl = cleanUrlFilename(savedBook.getBookCoverUrl());
-        String cleanPdfFileUrl = cleanUrlFilename(savedBook.getPdfFileUrl());
-        String cleanAudioFileUrl = cleanUrlFilename(savedBook.getAudioFileUrl());
-
         // Create response DTO from entity
         BookResponse response = bookMapper.toResponse(savedBook);
 
-        // Override URLs in response DTO with cleaned versions
-        response.setBookCoverUrl(cleanBookCoverUrl);
-        response.setPdfFileUrl(cleanPdfFileUrl);
-        response.setAudioFileUrl(cleanAudioFileUrl);
-
         return response;
     }
-    private String saveFile(MultipartFile file, String folder) {
-        try {
-            Path uploadPath = rootUploadDir.resolve(folder);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String originalFilename = file.getOriginalFilename();
-            String fileName = System.currentTimeMillis() + "_" + originalFilename;
-            Path filePath = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Return relative URL/path for client usage
-            return "/files/" + folder + "/" + fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
-        }
+    @Transactional(readOnly = true)
+    public BookResponse getBookById(Long id) {
+        Book book = getBookEntityById(id);
+        return bookMapper.toResponse(book);
     }
-
-    private void validateBookBusinessRules(Book book) {
-        if (book.getAvailableCopies() > book.getTotalCopies()) {
-            throw new BusinessLogicException("Available copies cannot exceed total copies");
-        }
-        if (book.getTotalCopies() <= 0) {
-            throw new BusinessLogicException("Total copies must be greater than 0");
-        }
-        if (book.getAvailableCopies() < 0) {
-            throw new BusinessLogicException("Available copies cannot be negative");
-        }
-    }
-
-
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public Page<BookResponse> getAllBooks(Long categoryId, Boolean available, Pageable pageable) {
         Page<Book> books;
         
-        if (categoryId != null && available != null) {
-            if (available) {
-                books = bookRepository.findByCategoryIdAndAvailableCopiesGreaterThan(categoryId, 0, pageable);
-            } else {
-                books = bookRepository.findByCategoryId(categoryId, pageable);
-            }
+        if (categoryId != null && available != null && available) {
+            books = bookRepository.findByCategoryIdAndAvailableCopiesGreaterThan(categoryId, 0, pageable);
         } else if (categoryId != null) {
             books = bookRepository.findByCategoryId(categoryId, pageable);
         } else if (available != null && available) {
@@ -178,208 +79,149 @@ public class BookService {
         
         return books.map(bookMapper::toResponse);
     }
-    
+
     @Transactional(readOnly = true)
     public Page<BookResponse> searchBooks(String query, Pageable pageable) {
         Page<Book> books = bookRepository.findByNameContainingIgnoreCaseOrAuthorContainingIgnoreCaseOrIsbnContainingIgnoreCase(
                 query, query, query, pageable);
         return books.map(bookMapper::toResponse);
     }
-    
+
     @Transactional(readOnly = true)
     public Page<BookResponse> getBooksByCategory(Long categoryId, Pageable pageable) {
         // Verify category exists
-        categoryService.getCategoryById(categoryId);
+        categoryService.getCategoryEntityById(categoryId);
+        
         Page<Book> books = bookRepository.findByCategoryId(categoryId, pageable);
         return books.map(bookMapper::toResponse);
     }
-    
+
     @Transactional(readOnly = true)
     public Page<BookResponse> getAvailableBooks(Pageable pageable) {
         Page<Book> books = bookRepository.findByAvailableCopiesGreaterThan(0, pageable);
         return books.map(bookMapper::toResponse);
     }
-    
-    @Transactional(readOnly = true)
-    public List<BookResponse> getTrendingBooks(int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
-        Page<Book> books = bookRepository.findTrendingBooks(pageable);
-        return bookMapper.toResponseList(books.getContent());
-    }
-    
-    @Transactional
-    public BookResponse updateBookAvailability(Long id, int availableCopies) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
-        
-        if (availableCopies < 0) {
-            throw new BusinessLogicException("Available copies cannot be negative");
-        }
-        
-        if (availableCopies > book.getTotalCopies()) {
-            throw new BusinessLogicException("Available copies cannot exceed total copies");
-        }
-        
-        book.setAvailableCopies(availableCopies);
-        Book updatedBook = bookRepository.save(book);
-        return bookMapper.toResponse(updatedBook);
-    }
-    
-    @Transactional(readOnly = true)
-    public BookResponse getBookById(Long id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
-        return bookMapper.toResponse(book);
-    }
-    
-    @Transactional(readOnly = true)
-    public List<BookResponse> searchBooksByName(String name) {
-        List<Book> books = bookRepository.findByNameContainingIgnoreCase(name);
-        return bookMapper.toResponseList(books);
-    }
-    
-    @Transactional(readOnly = true)
-    public List<BookResponse> searchBooksByAuthor(String author) {
-        List<Book> books = bookRepository.findByAuthorContainingIgnoreCase(author);
-        return bookMapper.toResponseList(books);
-    }
-    
 
-    
-    @Transactional(readOnly = true)
-    public List<BookResponse> getAvailableBooks() {
-        List<Book> books = bookRepository.findAvailableBooks();
-        return bookMapper.toResponseList(books);
-    }
-    
     @Transactional(readOnly = true)
     public List<BookResponse> getPopularBooks(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Book> books = bookRepository.findPopularBooks(pageable);
-        return bookMapper.toResponseList(books);
+        return books.stream()
+                .map(bookMapper::toResponse)
+                .toList();
     }
-    
+
+    @Transactional(readOnly = true)
+    public List<BookResponse> getRecommendedBooks(int limit) {
+        // Simple implementation - return trending books
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Book> books = bookRepository.findTrendingBooks(pageable);
+        return books.stream()
+                .map(bookMapper::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<BookResponse> getNewBooks(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Book> books = bookRepository.findNewBooks(pageable);
-        return bookMapper.toResponseList(books);
+        return books.stream()
+                .map(bookMapper::toResponse)
+                .toList();
     }
-    
-    @Transactional
-    public BookResponse createBook(BookCreateRequest request) {
-        // Check if book with same ISBN already exists
-        if (request.getIsbn() != null && bookRepository.findByIsbn(request.getIsbn()).isPresent()) {
-            throw new ResourceAlreadyExistsException("Book", "ISBN", request.getIsbn());
-        }
-        
-        Category category = categoryService.getCategoryEntityById(request.getCategoryId());
-        
-        Book book = bookMapper.toEntity(request, category);
-        
-        // Validate business rules
-        validateBookBusinessRules(book);
-        
-        Book savedBook = bookRepository.save(book);
 
-        // Send notification to the admin about the new book
-//        String adminEmail = "mfbinahid@gmail.com";  // Set your admin email here
-//        String message = "A new book titled '" + savedBook.getName() + "' has been added to the library.";
-//        notificationService.createNotification(message, adminEmail);
-        notificationService.notifyNewBook("mfbinahid@gmail.com", savedBook.getName());
-
-        // Return the saved book response
-        return bookMapper.toResponse(savedBook);
-    }
-    
     @Transactional
     public BookResponse updateBook(Long id, BookUpdateRequest request) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
-        
-        // Check if new ISBN conflicts with existing book
+        Book book = getBookEntityById(id);
+
+        // Check if ISBN is being changed and if it already exists
         if (request.getIsbn() != null && !request.getIsbn().equals(book.getIsbn())) {
             if (bookRepository.findByIsbn(request.getIsbn()).isPresent()) {
                 throw new ResourceAlreadyExistsException("Book", "ISBN", request.getIsbn());
             }
         }
-        
+
+        // Get category if provided
         Category category = null;
         if (request.getCategoryId() != null) {
             category = categoryService.getCategoryEntityById(request.getCategoryId());
         }
-        
+
+        // Update book fields
         bookMapper.updateEntity(book, request, category);
-        
+
         // Validate business rules
         validateBookBusinessRules(book);
-        
-        Book updatedBook = bookRepository.save(book);
-        return bookMapper.toResponse(updatedBook);
+
+        Book savedBook = bookRepository.save(book);
+        return bookMapper.toResponse(savedBook);
     }
-    
+
     @Transactional
     public void deleteBook(Long id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
+        Book book = getBookEntityById(id);
         
-        // Check if book has active borrows
-        if (book.getAvailableCopies() < book.getTotalCopies()) {
-            throw new BusinessLogicException(
-                String.format("Cannot delete book '%s' because it has active borrows", book.getName()));
-        }
-        
+        // Simple check - just delete the book
         bookRepository.delete(book);
     }
-    
+
     @Transactional
-    public void decreaseAvailableCopies(Long bookId) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", bookId));
+    public BookResponse updateBookAvailability(Long id, int availableCopies) {
+        Book book = getBookEntityById(id);
         
-        if (book.getAvailableCopies() <= 0) {
-            throw new BusinessLogicException("No available copies to borrow");
+        if (availableCopies < 0 || availableCopies > book.getTotalCopies()) {
+            throw new BusinessLogicException("Available copies must be between 0 and " + book.getTotalCopies());
         }
-        
-        book.setAvailableCopies(book.getAvailableCopies() - 1);
-        bookRepository.save(book);
+
+        book.setAvailableCopies(availableCopies);
+
+        Book savedBook = bookRepository.save(book);
+        return bookMapper.toResponse(savedBook);
     }
-    
-    @Transactional
-    public void increaseAvailableCopies(Long bookId) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", bookId));
-        
-        if (book.getAvailableCopies() >= book.getTotalCopies()) {
-            throw new BusinessLogicException("Cannot increase available copies beyond total copies");
-        }
-        
-        book.setAvailableCopies(book.getAvailableCopies() + 1);
-        bookRepository.save(book);
-    }
-    
-    // Helper method for internal use by other services
+
     @Transactional(readOnly = true)
+    public Boolean isBookAvailable(Long id) {
+        Book book = getBookEntityById(id);
+        return book.getAvailableCopies() > 0;
+    }
+
+    // Helper methods
     public Book getBookEntityById(Long id) {
         return bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
     }
-    
 
-    
-    @Transactional(readOnly = true)
-    public Boolean isBookAvailable(Long id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book", "id", id));
-        return book.getAvailableCopies() > 0;
+    @Transactional
+    public void decrementAvailableCopies(Long bookId) {
+        Book book = getBookEntityById(bookId);
+        
+        if (book.getAvailableCopies() <= 0) {
+            throw new BusinessLogicException("No available copies for this book");
+        }
+
+        book.setAvailableCopies(book.getAvailableCopies() - 1);
+        
+        bookRepository.save(book);
     }
-    
-    @Transactional(readOnly = true)
-    public List<BookResponse> getRecommendedBooks(int limit) {
-        // Return trending books as default recommendations
-        // In a real implementation with user context, you would call:
-        // recommendationService.getPersonalizedRecommendations(userId, limit);
-        return recommendationService.getTrendingBooks(limit);
+
+    @Transactional
+    public void incrementAvailableCopies(Long bookId) {
+        Book book = getBookEntityById(bookId);
+        
+        if (book.getAvailableCopies() >= book.getTotalCopies()) {
+            throw new BusinessLogicException("Available copies cannot exceed total copies");
+        }
+
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+        
+        bookRepository.save(book);
+    }
+
+    private void validateBookBusinessRules(Book book) {
+        // Validate available copies
+        if (book.getAvailableCopies() > book.getTotalCopies()) {
+            throw new BusinessLogicException("Available copies cannot exceed total copies");
+        }
     }
 }
 

@@ -31,12 +31,29 @@ public class BorrowService {
     private static final int BORROW_PERIOD_DAYS = 14;
     private static final int EXTENSION_DAYS = 7;
     private static final int MAX_EXTENSIONS = 2;
-    
+
+
+    @Transactional(readOnly = true)
+    public long countActiveBorrows() {
+        return borrowRepository.countByStatus(Borrow.BorrowStatus.ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
+    public long countReturnedBorrows() {
+        return borrowRepository.countByStatus(Borrow.BorrowStatus.RETURNED);
+    }
+
+    @Transactional(readOnly = true)
+    public long countOverdueBorrows() {
+        return borrowRepository.countByStatus(Borrow.BorrowStatus.OVERDUE);
+    }
+
+
     @Transactional
     public BorrowResponse borrowBook(BorrowCreateRequest request) {
         return createBorrow(request);
     }
-    
+
     @Transactional(readOnly = true)
     public Page<BorrowResponse> getAllBorrows(Long userId, Long bookId, Boolean active, Boolean overdue, Pageable pageable) {
         Page<Borrow> borrows;
@@ -131,7 +148,7 @@ public class BorrowService {
         Borrow borrow = borrowMapper.toEntity(request, user, book);
         
         // Decrease available copies
-        bookService.decreaseAvailableCopies(book.getId());
+        bookService.decrementAvailableCopies(book.getId());
         
         Borrow savedBorrow = borrowRepository.save(borrow);
         return borrowMapper.toResponse(savedBorrow);
@@ -150,7 +167,7 @@ public class BorrowService {
         borrow.setStatus(Borrow.BorrowStatus.RETURNED);
         
         // Increase available copies
-        bookService.increaseAvailableCopies(borrow.getBook().getId());
+        bookService.incrementAvailableCopies(borrow.getBook().getId());
         
         Borrow updatedBorrow = borrowRepository.save(borrow);
         return borrowMapper.toResponse(updatedBorrow);

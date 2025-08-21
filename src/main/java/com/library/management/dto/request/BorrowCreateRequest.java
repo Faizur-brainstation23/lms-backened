@@ -1,5 +1,6 @@
 package com.library.management.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -16,10 +17,12 @@ public class BorrowCreateRequest {
     
     @NotNull(message = "User ID is required")
     @Schema(description = "ID of the user borrowing the book", example = "1")
+    @JsonProperty("userId")
     private Long userId;
     
     @NotNull(message = "Book ID is required")
     @Schema(description = "ID of the book being borrowed", example = "1")
+    @JsonProperty("bookId")
     private Long bookId;
 }
 
