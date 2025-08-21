@@ -61,11 +61,6 @@
 
 ## 🚀 Deployment Information
 
-### **Live Application URLs**:
-- **Main Application**: https://8081-io9hishz1fhbcnye1lecl-15255652.manusvm.computer
-- **Swagger UI**: https://8081-io9hishz1fhbcnye1lecl-15255652.manusvm.computer/swagger-ui/index.html
-- **H2 Database Console**: https://8081-io9hishz1fhbcnye1lecl-15255652.manusvm.computer/h2-console
-
 ### **Test Credentials**:
 - **Admin Login**:
   - Username: `admin`
@@ -74,13 +69,18 @@
   - JDBC URL: `jdbc:h2:mem:testdb`
   - Username: `sa`
   - Password: (empty)
+    
+  **Database Access**:
+  -Postgres
+  -User: postgres
+  -Password: postgres123
 
 ## 📋 Technical Specifications
 
 ### **Technology Stack**:
 - **Backend**: Spring Boot 3.5.4
 - **Java Version**: OpenJDK 21
-- **Database**: H2 (in-memory for development)
+- **Database**: H2 (in-memory for development) & postgres
 - **Authentication**: JWT with BCrypt password hashing
 - **API Documentation**: OpenAPI 3.0 with Swagger UI
 - **Build Tool**: Maven
@@ -116,38 +116,5 @@
 - ✅ Lazy loading for entity relationships
 - ✅ Connection pooling with HikariCP
 
-## 📈 System Capabilities
 
-### **Library Operations**:
-- Complete book inventory management
-- User registration and management
-- Book borrowing and return system
-- Reservation/booking system
-- Category management
-- Donation request handling
-
-### **Review System**:
-- User reviews and ratings (1-5 stars)
-- Review statistics and analytics
-- Review moderation capabilities
-- User review history
-
-### **Administrative Features**:
-- Admin settings configuration
-- User statistics and reporting
-- Overdue book tracking
-- System monitoring via Actuator
-
-## 🏆 Project Status: **COMPLETE** ✅
-
-All requested issues have been successfully resolved:
-- ✅ Admin password fixed
-- ✅ Duplicate Book create API removed
-- ✅ Book creation with files optimized
-- ✅ UI duplicate text removed
-- ✅ Book review functionality verified
-- ✅ All CRUD operations tested
-- ✅ System deployed and accessible
-
-The Library Management System is now fully functional and ready for production use!
 
