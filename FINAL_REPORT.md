@@ -112,9 +112,6 @@
 
 ### **Performance** ✅
 - ✅ Efficient database queries
-- ✅ Proper pagination support
-- ✅ Lazy loading for entity relationships
-- ✅ Connection pooling with HikariCP
 
 
 
